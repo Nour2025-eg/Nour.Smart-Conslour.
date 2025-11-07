@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>النور للمحاماة | SmartLawyer AI</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#bfa76f">
+  <style>
+    :root{--black:#000;--gold:#bfa76f;--green:#28a745;}
+    body{margin:0;font-family:'Cairo',sans-serif;background:linear-gradient(135deg,var(--black),var(--gold));height:100vh;display:flex;align-items:center;justify-content:center;color:#fff;text-align:center;}
+    .card{background:rgba(0,0,0,.8);padding:30px;border-radius:15px;box-shadow:0 0 20px var(--gold);}
+    h1{margin-bottom:10px;}h2{margin-bottom:20px;font-weight:400;}
+    .btn{background:var(--gold);color:#fff;border:none;padding:12px 30px;font-size:1.1rem;border-radius:25px;cursor:pointer;transition:.3s;}
+    .btn:hover{transform:scale(1.05);}
+    .hidden{display:none;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>النور للمحاماة</h1>
+    <h2>برنامج المحامي الذكي</h2>
+    <p>وَإِنْ حَكَمْتُمْ بَيْنَ النَّاسِ فَاحْكُمُوا بِالْعَدْلِ</p>
+    <button onclick="playWelcome();showMain();">دخول</button>
+    <br><br>
+    <audio id="welcomeSound" preload="auto">
+      <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrZp8jXF3hGlmbl9ZZmJdWWNdXl1hYl1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1gYV1
+/* style.css */
+:root{--black:#000;--gold:#bfa76f;--green:#28a745;}
+body{margin:0;font-family:'Cairo',sans-serif;background:linear-gradient(135deg,var(--black),var(--gold));color:#fff;text-align:center;}
+.card{background:rgba(0,0,0,.8);padding:30px;border-radius:15px;box-shadow:0 0 20px var(--gold);}
+h1{margin-bottom:10px;}h2{margin-bottom:20px;font-weight:400;}
+.btn{background:var(--gold);color:#fff;border:none;padding:12px 30px;font-size:1.1rem;border-radius:25px;cursor:pointer;transition:.3s;}
+.btn:hover{transform:scale(1.05);}
+.hidden{display:none;}
+// script.js
+function playWelcome(){
+  document.getElementById('welcomeSound').play();
+  setTimeout(()=>alert("بسم الله ماشاء الله ولا حول ولا قوة إلا بالله\nمرحباً بك معالي المستشار أحمد نور\nلقد تم تشغيل البرنامج بنجاح"),1000);
+}
+function showMain(){
+  document.querySelector('.card').innerHTML=`
+    <h1>أهلاً بك</h1>
+    <button class="btn" onclick="openSection('cases')">القضايا</button>
+    <button class="btn" onclick="openSection('contracts')">العقود</button>
+    <button class="btn" onclick="openSection('users')">المستخدمين</button>
+    <button class="btn" onclick="openSection('ai')">المحامي الذكي</button>
+  `;
+}
+function openSection(sec){alert("قسم "+sec+" جاهز الآن");}
+{
+  "name": "SmartLawyer AI – Ahmed Nour",
+  "short_name": "SmartLawyer",
+  "description": "برنامج المحامي الذكي – إدارة القضايا والعقود بالذكاء الاصطناعي",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#bfa76f",
+  "orientation": "portrait",
+  "icons": [
+    {"src": "icon-192.png","sizes": "192x192","type": "image/png"},
+    {"src": "icon-512.png","sizes": "512x512","type": "image/png"}
+  ]
+}
+const CACHE_NAME = 'smartlawyer-v1';
+const urlsToCache = ['/', '/index.html', '/style.css', '/script.js', '/icon-192.png', '/icon-512.png'];
+self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache))));
+self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+✅ 6)  icon-192.png  (أيقونة 192×192) 
+انسخ أي صورة PNG حجم 192×192 وسمّها  icon-192.png 
+✅ 7)  icon-512.png  (أيقونة 512×512) 
+انسخ أي صورة PNG حجم 512×512 وسمّها  icon-512.png 
+# SmartLawyer AI – Ahmed Nour
+برنامج المحامي الذكي – إدارة القضايا والعقود بالذكاء الاصطناعي  
+الألوان: أسود – ذهبي – أخضر  
+اللغات: عربي + إنجليزي  
+الصوت: بسم الله ماشاء الله  
+الأقسام: القضايا – العقود – المستخدمين – الإعلانات – الملاحظات – الإعدادات – المحامي الذكي  
