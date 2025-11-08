@@ -111,3 +111,11 @@ Flask==2.3.2
 flask-cors==4.0.0
 openai==0.27.8
 gunicorn==21.2.0
+services:
+  - type: web
+    name: nour-lawyer-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    plan: free
+
