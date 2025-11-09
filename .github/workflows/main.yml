@@ -1,0 +1,222 @@
+# smartlawyer_complete.py
+# إعداد المستشار القانوني أحمد نورالدين
+import os, sqlite3, datetime
+from flask import Flask, request, jsonify, render_template_string
+from flask_cors import CORS
+import openai
+
+app = Flask(__name__)
+CORS(app)
+openai.api_key = os.getenv("OPENAI_KEY", "sk-XXXXXXXXXXXXXXXXXXXXXXXX")  # غيّره لاحقًا
+
+# إنشاء/توصيل قاعدة البيانات
+DB = "smartlawyer.db"
+def init_db():
+    with sqlite3.connect(DB) as conn:
+        conn.execute("""CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT)""")
+        conn.execute("""CREATE TABLE IF NOT EXISTS questions(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            question TEXT,
+            answer TEXT,
+            time TEXT)""")
+init_db()
+
+# صفحة ترحيبية
+WELCOME_HTML = """
+<!DOCTYPE html>
+<html lang="ar">
+<head><meta charset="utf-8"><title>برنامج المحامي الذكي</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>body{background:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;min-height:100vh}
+.overlay{background:rgba(255,255,255,.85);min-height:100vh}.card{margin-top:15vh;border-radius:15px}.logo{width:90px}</style>
+</head>
+<body class="overlay d-flex align-items-center justify-content-center">
+  <div class="card shadow-lg p-4 text-center" style="max-width:400px">
+    <img class="logo mb-3" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="شعار">
+    <h3>برنامج المحامي الذكي</h3>
+    <p class="text-muted mb-4">إعداد المستشار القانوني أحمد نورالدين</p>
+    <div class="d-grid gap-2">
+      <a class="btn btn-primary" href="/login">تسجيل الدخول</a>
+      <a class="btn btn-outline-primary" href="/register">إنشاء حساب</a>
+    </div>
+    <small class="mt-3 text-muted">جميع الحقوق محفوظة &copy; 2024</small>
+  </div>
+</body>
+</html>
+"""
+
+# صفحة تسجيل الدخول
+LOGIN_HTML = """
+<!DOCTYPE html>
+<html lang="ar">
+<head><meta charset="utf-8"><title>تسجيل دخول</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head><body class="bg-light">
+<div class="container mt-5" style="max-width:400px">
+  <div class="card shadow p-4">
+    <h4 class="mb-3">تسجيل الدخول</h4>
+    <form action="/api/login" method="post">
+      <input name="username" class="form-control mb-2" placeholder="اسم المستخدم" required>
+      <input name="password" type="password" class="form-control mb-3" placeholder="كلمة المرور" required>
+      <button class="btn btn-primary w-100">دخول</button>
+    </form>
+    <div class="text-center mt-3"><small>ليس لديك حساب؟ <a href="/register">إنشاء حساب</a></small></div>
+  </div>
+</div>
+</body></html>
+"""
+
+# صفحة الدردشة
+CHAT_HTML = """
+<!DOCTYPE html>
+<html lang="ar">
+<head><meta charset="utf-8"><title>المحامي الذكي – الدردشة</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>.chat-container{max-width:700px;margin:30px auto}.msg{max-width:75%;word-wrap:break-word}.msg.user{background:#007bff;color:#fff;margin-left:auto}.msg.bot{background:#e9ecef;margin-right:auto}#micBtn{width:50px;height:50px;border-radius:50%}.clock{position:fixed;top:10px;right:10px;background:#fff;padding:5px 10px;border-radius:5px;box-shadow:0 0 5px rgba(0,0,0,.1)}</style>
+</head><body>
+<div class="clock" id="clock"></div>
+<div class="chat-container card shadow">
+  <div class="card-header bg-primary text-white"><i class="fas fa-balance-scale me-2"></i>المحامي الذكي
+    <div class="float-end"><button class="btn btn-sm btn-light" onclick="toggleLang()">EN/ع</button>
+      <a class="btn btn-sm btn-light" href="/logout"><i class="fas fa-sign-out-alt"></i></a></div>
+  </div>
+  <div class="card-body" style="height:400px;overflow-y:auto" id="chatBox"></div>
+  <div class="card-footer">
+    <form id="chatForm" class="input-group">
+      <input id="q" class="form-control" placeholder="اكتب سؤالك..." required>
+      <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
+      <button type="button" id="micBtn" class="btn btn-outline-danger"><i class="fas fa-microphone"></i></button>
+    </form>
+  </div>
+</div>
+<script>
+const lang = {ar:{placeholder:"اكتب سؤالك...",send:"إرسال"},en:{placeholder:"Type your question...",send:"Send"}};
+let currentLang = 'ar';
+function toggleLang(){currentLang = currentLang==='ar'?'en':'ar';document.getElementById('q').placeholder=lang[currentLang].placeholder;}
+document.getElementById('chatForm').onsubmit = async (e)=>{
+  e.preventDefault();
+  const q = document.getElementById('q').value;
+  if(!q) return;
+  addMsg(q,'user');
+  document.getElementById('q').value='';
+  const res = await fetch('/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,lang:currentLang})});
+  const data = await res.json();
+  addMsg(data.answer,'bot');
+};
+function addMsg(text,sender){
+  const box=document.getElementById('chatBox');
+  const div=document.createElement('div');
+  div.className=`msg ${sender}`;
+  div.textContent=text;
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
+// ساعة حية
+function updateClock(){
+  const now=new Date(),time=now.toLocaleTimeString('ar-EG');
+  document.getElementById('clock').textContent=time;
+}
+setInterval(updateClock,1000);updateClock();
+// ميكروفون (Web Speech API)
+const micBtn=document.getElementById('micBtn');
+micBtn.onclick=()=>{
+  if(!('webkitSpeechRecognition' in window)){alert('المتصفح لا يدعم التعرف الصوتي');return;}
+  const recognition=new webkitSpeechRecognition();
+  recognition.lang='ar-SA'; recognition.continuous=false; recognition.interimResults=false;
+  recognition.onresult=(e)=>{document.getElementById('q').value=e.results[0][0].transcript;};
+  recognition.start();
+};
+</script>
+</body></html>
+"""
+
+# الـ Routes
+@app.route('/')
+def index():
+    return render_template_string(WELCOME_HTML)
+
+@app.route('/login')
+def login():
+    return render_template_string(LOGIN_HTML)
+
+@app.route('/register')
+def register():
+    return render_template_string(REGISTER_HTML)
+
+@app.route('/chat')
+def chat():
+    return render_template_string(CHAT_HTML)
+
+@app.route('/logout')
+def logout():
+    return '<script>alert("تم تسجيل الخروج");location.href="/";</script>'
+
+# API
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    username = request.form.get('username','').strip()
+    password = request.form.get('password','').strip()
+    email = request.form.get('email','').strip()
+    if not username or not password: return jsonify({'ok':0,'msg':'اسم المستخدم وكلمة المرور مطلوبان'})
+    with sqlite3.connect(DB) as conn:
+        try:
+            conn.execute("INSERT INTO users(username,password,email) VALUES(?,?,?)",(username,password,email))
+            return jsonify({'ok':1,'msg':'تم الإنشاء، سجل دخول الآن'})
+        except sqlite3.IntegrityError:
+            return jsonify({'ok':0,'msg':'اسم المستخدم موجود'})
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    username = request.form.get('username','').strip()
+    password = request.form.get('password','').strip()
+    with sqlite3.connect(DB) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM users WHERE username=? AND password=?",(username,password))
+        user = cur.fetchone()
+    if user:
+        return jsonify({'ok':1,'msg':'تم الدخول','uid':user[0]})
+    return jsonify({'ok':0,'msg':'بيانات خاطئة'})
+
+@app.route('/ask', methods=['POST'])
+def ask():
+    data = request.get_json(force=True)
+    q = data.get('question','').strip()
+    lang = data.get('lang','ar')
+    if not q: return jsonify({'answer':'من فضلك اكتب سؤالك'})
+    try:
+        prompt = "أنت محامي مصري متمرس، أجب بلغة عربية فصحى وباختصار."
+        if lang=='en': prompt = "You are an experienced Egyptian lawyer, answer in English concisely."
+        res = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role":"system","content":prompt},{"role":"user","content":q}],
+            max_tokens=350,
+            temperature=0.5
+        )
+        ans = res.choices[0].message.content.strip()
+        # حفظ السؤال والإجابة
+        with sqlite3.connect(DB) as conn:
+            conn.execute("INSERT INTO questions(user_id,question,answer,time) VALUES(?,?,?,?)",
+                         (1,q,ans,datetime.datetime.utcnow().isoformat()))
+        return jsonify({'answer':ans})
+    except Exception as e:
+        return jsonify({'answer':f'
+# ===== الملف الثاني: requirements.txt =====
+# Flask==2.3.2
+# flask-cors==4.0.0
+# openai==0.27.8
+# gunicorn==21.2.0
+
+# ===== الملف الثالث: render.yaml =====
+# services:
+#   - type: web
+#     name: smartlawyer-app
+#     env: python
+#     pythonVersion: 3.11
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: gunicorn app:app
+#     plan: free
