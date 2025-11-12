@@ -1,44 +1,39 @@
-# smartlawyer_complete.py
-# إعداد المستشار القانوني أحمد نورالدين
-import os, sqlite3, datetime
-from flask import Flask, request, jsonify, render_template_string
-from flask_cors import CORS
-import openai
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy static content to Pages
 
-app = Flask(__name__)
-CORS(app)
-openai.api_key = os.getenv("OPENAI_KEY", "sk-XXXXXXXXXXXXXXXXXXXXXXXX")  # غيّره لاحقًا
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
 
-# إنشاء/توصيل قاعدة البيانات
-DB = "smartlawyer.db"
-def init_db():
-    with sqlite3.connect(DB) as conn:
-        conn.execute("""CREATE TABLE IF NOT EXISTS users(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT)""")
-        conn.execute("""CREATE TABLE IF NOT EXISTS questions(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            question TEXT,
-            answer TEXT,
-            time TEXT)""")
-init_db()
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-# صفحة ترحيبية
-WELCOME_HTML = """
-<!DOCTYPE html>
-<html lang="ar">
-<head><meta charset="utf-8"><title>برنامج المحامي الذكي</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>body{background:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;min-height:100vh}
-.overlay{background:rgba(255,255,255,.85);min-height:100vh}.card{margin-top:15vh;border-radius:15px}.logo{width:90px}</style>
-</head>
-<body class="overlay d-flex align-items-center justify-content-center">
-  <div class="card shadow-lg p-4 text-center" style="max-width:400px">
-    <img class="logo mb-3" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="شعار">
-    <h3>برنامج المحامي الذكي</h3>
-    <p class="text-muted mb-4">إعداد المستشار القانوني أحمد نورالدين</p>
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
     <div class="d-grid gap-2">
       <a class="btn btn-primary" href="/login">تسجيل الدخول</a>
       <a class="btn btn-outline-primary" href="/register">إنشاء حساب</a>
